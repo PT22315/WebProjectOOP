@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <title>ร้านอาหาร OOP</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <h1>🍽️ เมนูอาหาร</h1>
+  <ul>
+    {% for item in menu %}
+      <li>{{ item.get_info() }}</li>
+    {% endfor %}
+  </ul>
+</body>
+</html>
