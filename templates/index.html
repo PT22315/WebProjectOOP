@@ -1,16 +1,35 @@
+
 <!DOCTYPE html>
 <html lang="th">
 <head>
-  <meta charset="UTF-8">
-  <title>ร้านอาหาร OOP</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <meta charset="UTF-8">
+    <title>เมนูอาหาร</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body>
-  <h1>🍽️ เมนูอาหาร</h1>
-  <ul>
-    {% for item in menu %}
-      <li>{{ item.get_info() }}</li>
-    {% endfor %}
-  </ul>
+    <header>
+        <h1>ร้านอาหาร OOP</h1>
+        <nav>
+            <ul>
+                <li><a href="{{ url_for('index') }}">Home</a></li>
+                <li><a href="{{ url_for('menu_page') }}">Menu</a></li>
+                <li><a href="{{ url_for('login') }}">Login</a></li>
+
+            </ul>
+        </nav>
+    </header>
+
+    <h2>เมนูอาหาร</h2>
+    <ul class="menu-list">
+        {% for item in menu %}
+            <li>{{ item.get_info() }}
+                 <!-- ปุ่ม Edit/Delete -->
+            <a href="{{ url_for('edit_item', item_id=item.id) }}" class="edit-btn">Edit</a>
+            <a href="{{ url_for('delete_item', item_id=item.id) }}" class="delete-btn">Delete</a>
+            </li>
+        {% endfor %}
+    </ul>
 </body>
 </html>
+
+
