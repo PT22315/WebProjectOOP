@@ -22,10 +22,22 @@ db.init_app(app)
 with app.app_context():
     db.create_all()
     if not ProductDB.query.first():
-        db.session.add(ProductDB(name="พิซซ่าหน้าแฮมชีส", price=199, category="อาหารจานหลัก"))
-        db.session.add(ProductDB(name="สปาเกตตี้คาโบนาร่า", price=149, category="อาหารจานหลัก"))
-        db.session.add(ProductDB(name="เฟรนช์ฟรายส์", price=59, category="ของทานเล่น"))
-        db.session.add(ProductDB(name="โค้ก", price=29, category="เครื่องดื่ม"))
+        db.session.add(ProductDB(
+            name="พิซซ่าหน้าแฮมชีส", price=199, category="อาหารจานหลัก",
+            image_url="https://cdn.pizzahut.co.th/pizzas-by-size/ham-and-cheese_hce-vertical-M-08022024104537.jpg"
+        ))
+        db.session.add(ProductDB(
+            name="สปาเกตตี้คาโบนาร่า", price=149, category="อาหารจานหลัก",
+            image_url=None  # ไม่มีรูปก็ได้
+        ))
+        db.session.add(ProductDB(
+            name="เฟรนช์ฟรายส์", price=59, category="ของทานเล่น",
+            image_url=None
+        ))
+        db.session.add(ProductDB(
+            name="โค้ก", price=29, category="เครื่องดื่ม",
+            image_url=None
+        ))
         db.session.commit()
 
 # -----------------------------
@@ -62,11 +74,12 @@ def edit_item(item_id):
     if request.method == 'POST':
         item.name = request.form['name']
         item.price = request.form['price']
-        item.category = request.form['category']
+        item.image_url = request.form.get('image_url') 
         db.session.commit()
-        flash("แก้ไขเรียบร้อยแล้ว", "success")
+        flash('อัปเดตเมนูเรียบร้อยแล้ว', 'success')
         return redirect(url_for('index'))
     return render_template('edit_item.html', item=item)
+
 
 @app.route('/delete/<int:item_id>')
 def delete_item(item_id):
@@ -76,7 +89,26 @@ def delete_item(item_id):
     flash("ลบเมนูเรียบร้อยแล้ว", "success")
     return redirect(url_for('index'))
 
+@app.route('/add', methods=['GET', 'POST'])
+def add_item():
+    if request.method == 'POST':
+        name = request.form['name']
+        price = request.form['price']
+        category = request.form['category']
+        image_url = request.form.get('image_url')  # optional
 
+        new_item = ProductDB(
+            name=name,
+            price=price,
+            category=category,
+            image_url=image_url
+        )
+        db.session.add(new_item)
+        db.session.commit()
+        flash('เพิ่มสินค้าเรียบร้อยแล้ว', 'success')
+        return redirect(url_for('index'))
+
+    return render_template('add_item.html')
 # -----------------------------
 # Run server
 # -----------------------------

@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <title>เพิ่มสินค้า</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <header>
+        <h1>เพิ่มสินค้า</h1>
+        <nav>
+            <ul>
+                <li><a href="{{ url_for('index') }}">Home</a></li>
+                <li><a href="{{ url_for('menu_page') }}">Menu</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <form method="POST">
+        <label>ชื่อสินค้า</label><br>
+        <input type="text" name="name" required><br><br>
+
+        <label>ราคา</label><br>
+        <input type="number" name="price" required><br><br>
+
+        <label>ประเภท</label><br>
+        <input type="text" name="category"><br><br>
+
+        <label>URL รูปภาพ</label><br>
+        <input type="text" name="image_url" placeholder="ใส่ URL รูปภาพ"><br><br>
+
+        <button type="submit">บันทึก</button>
+    </form>
+</body>
+</html>
