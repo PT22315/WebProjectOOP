@@ -343,3 +343,79 @@ header nav ul li a:hover {
     visibility: visible;
     opacity: 1;
 }
+/* ========================= */
+/*        Login Page         */
+/* ========================= */
+.login-container {
+    background-color: #fff;
+    border-radius: 10px;
+    padding: 40px;
+    width: 350px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.25);
+    margin: 120px auto 0;
+    text-align: center;
+    animation: fadeIn 0.6s ease;
+}
+
+.login-container h2 {
+    color: #2f1749;
+    margin-bottom: 25px;
+}
+
+.login-container label {
+    display: block;
+    font-weight: 600;
+    text-align: left;
+    margin-bottom: 5px;
+    color: #333;
+}
+
+.login-container input[type="text"],
+.login-container input[type="password"] {
+    width: 100%;
+    padding: 10px 12px;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+    margin-bottom: 15px;
+    font-size: 1em;
+    box-sizing: border-box;
+}
+
+.login-container button[type="submit"] {
+    width: 100%;
+    background: linear-gradient(90deg,#5d4c91, #554272, #2f1749);
+    color: #fff;
+    border: none;
+    padding: 10px;
+    border-radius: 6px;
+    font-weight: bold;
+    font-size: 1em;
+    cursor: pointer;
+    transition: background 0.3s ease, transform 0.2s;
+}
+
+.login-container button[type="submit"]:hover {
+    transform: translateY(-2px);
+    background: linear-gradient(90deg,#6e58aa, #5b4787, #3c1d5c);
+}
+
+li.success {
+    background-color: #2ecc71;
+    color: #fff;
+    padding: 8px;
+    border-radius: 5px;
+    margin-bottom: 10px;
+}
+
+li.error {
+    background-color: #e74c3c;
+    color: #fff;
+    padding: 8px;
+    border-radius: 5px;
+    margin-bottom: 10px;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}

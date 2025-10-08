@@ -1,15 +1,186 @@
-<h2>Edit Menu Item</h2>
-<form method="POST" action="{{ url_for('edit_item', item_id=item.id) }}">
-    <label>ชื่ออาหาร:</label>
-    <input type="text" name="name" value="{{ item.name }}" required>
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <title>แก้ไขเมนู - ร้านอาหาร OOP</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <style>
+            form input[type="text"],
+            form input[type="number"] {
+                width: 100%;
+                padding: 8px;
+                margin-bottom: 10px;
+                box-sizing: border-box; /* ให้ padding ไม่ทำให้เกินขนาด */
+                border: 1px solid #ccc;
+                border-radius: 4px;
+                font-size: 16px;
+                height: 38px;
+            }
 
-    <label>ราคา:</label>
-    <input type="number" name="price" value="{{ item.price }}" required>
+            form label {
+                font-weight: bold;
+                margin-bottom: 5px;
+                display: block;
+            }
 
-    <label>ลิงก์รูปภาพ (URL):</label>
-    <input type="text" name="image_url" value="{{ item.image_url or '' }}" placeholder="วางลิงก์รูปจาก Google ตรงนี้">
+            .add-btn {
+                padding: 10px;
+                font-size: 16px;
+                background-color: #4CAF50;
+                color: white;
+                border: none;
+                border-radius: 4px;
+                cursor: pointer;
+            }
 
-    <button type="submit">บันทึก</button>
-</form>
+            .add-btn:hover {
+                background-color: #45a049;
+            }
+        </style>
+</head>
+<body>
+    <!-- Header -->
+    <header>
+        <h1>ร้านอาหาร OOP</h1>
+        <nav>
+            <ul>
+                <li><a href="{{ url_for('index') }}">Home</a></li>
+                <li><a href="{{ url_for('menu_page') }}">Menu</a></li>
 
-<a href="{{ url_for('index') }}">Back to Menu</a>
+                {% if session.get('user') %}
+                    <li>สวัสดี, {{ session['user'] }}</li>
+                    <li><a href="{{ url_for('logout') }}">Logout</a></li>
+                    <li><a href="#" onclick="openCart()">ลิสสินค้า</a></li>
+                {% else %}
+                    <li><a href="{{ url_for('login') }}">Login</a></li>
+                {% endif %}
+
+                <li class="cart-summary">สินค้า: <span id="cart-count">0</span> ชิ้น รวม: <span id="cart-total">0</span> บาท</li>
+            </ul>
+        </nav>
+    </header>
+
+    <!-- Edit Form Section -->
+    <div class="login-container" style="max-width:400px;">
+        <h2>แก้ไขเมนูอาหาร</h2>
+
+        <form method="POST" action="{{ url_for('edit_item', item_id=item.id) }}">
+            <label>ชื่ออาหาร:</label>
+            <input type="text" name="name" value="{{ item.name }}" required>
+
+            <label>ราคา:</label>
+            <input type="number" name="price" value="{{ item.price }}" required>
+
+            <label>ลิงก์รูปภาพ (URL):</label>
+            <input type="text" name="image_url" value="{{ item.image_url or '' }}" placeholder="วางลิงก์รูปจาก Google ตรงนี้">
+
+            <button type="submit" class="add-btn" style="width:100%;">บันทึก</button>
+        </form>
+
+        <a href="{{ url_for('index') }}" style="display:block; margin-top:15px; text-align:center;">กลับไปเมนู</a>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="toast"></div>
+
+    <!-- Cart Modal -->
+    <div id="cart-modal" class="cart-modal">
+        <div class="cart-content">
+            <span class="close" onclick="closeCart()">&times;</span>
+            <h3>ตะกร้าสินค้า</h3>
+            <ul id="cart-items"></ul>
+            <p id="cart-grand-total"></p>
+        </div>
+    </div>
+
+    <script>
+    // ใช้ JS จาก index.html สำหรับตะกร้า
+    document.addEventListener('DOMContentLoaded', () => {
+        const carts = {};
+
+        function showToast(message){
+            const toast = document.getElementById("toast");
+            toast.innerText = message;
+            toast.classList.add("show");
+            setTimeout(() => toast.classList.remove("show"), 1500);
+        }
+
+        function updateCart(){
+            let totalQty = 0;
+            let totalPrice = 0;
+            for(const item in carts){
+                totalQty += carts[item].qty;
+                totalPrice += carts[item].qty * carts[item].price;
+            }
+            document.getElementById('cart-count').innerText = totalQty;
+            document.getElementById('cart-total').innerText = totalPrice.toFixed(2);
+        }
+
+        window.openCart = function() {
+            const modal = document.getElementById("cart-modal");
+            const itemsList = document.getElementById("cart-items");
+            const totalElem = document.getElementById("cart-grand-total");
+            itemsList.innerHTML = "";
+            let total = 0;
+
+            for(const name in carts){
+                const item = carts[name];
+                const itemTotal = item.qty * item.price;
+                total += itemTotal;
+
+                itemsList.innerHTML += `
+                <li>
+                    <span class="item-name">${name}</span>
+                    <div class="item-qty">
+                        <button class="qty-decrease" data-name="${name}">-</button>
+                        <span class="qty-number">${item.qty}</span>
+                        <button class="qty-increase" data-name="${name}">+</button>
+                    </div>
+                    <span class="item-price">${itemTotal.toFixed(2)} บาท</span>
+                    <button class="remove-item" data-name="${name}">&times;</button>
+                </li>`;
+            }
+            totalElem.innerHTML = `รวม: ${total.toFixed(2)} บาท`;
+
+            itemsList.querySelectorAll('.remove-item').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const name = btn.getAttribute('data-name');
+                    delete carts[name];
+                    updateCart();
+                    openCart();
+                });
+            });
+
+            itemsList.querySelectorAll('.qty-increase').forEach(btn=>{
+                btn.addEventListener('click', ()=>{
+                    const name = btn.getAttribute('data-name');
+                    carts[name].qty++;
+                    updateCart();
+                    openCart();
+                });
+            });
+
+            itemsList.querySelectorAll('.qty-decrease').forEach(btn=>{
+                btn.addEventListener('click', ()=>{
+                    const name = btn.getAttribute('data-name');
+                    if(carts[name].qty>1){
+                        carts[name].qty--;
+                    } else {
+                        delete carts[name];
+                    }
+                    updateCart();
+                    openCart();
+                });
+            });
+
+            modal.style.display = "block";
+        };
+
+        window.closeCart = function() {
+            document.getElementById("cart-modal").style.display = "none";
+        };
+    });
+    </script>
+</body>
+</html>

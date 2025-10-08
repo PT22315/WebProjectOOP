@@ -13,16 +13,46 @@
             <ul>
                 <li><a href="{{ url_for('index') }}">Home</a></li>
                 <li><a href="{{ url_for('menu_page') }}">Menu</a></li>
-                <li><a href="{{ url_for('login') }}">Login</a></li>
-                <li><a href="#" onclick="openCart()">ดูตะกร้า</a></li>
-                <li class="cart-summary">ตะกร้า: <span id="cart-count">0</span> ชิ้น   รวม: <span id="cart-total">0</span> บาท</li>
+
+                {% if session.get('user') %}
+                    <li>สวัสดี, {{ session['user'] }}</li>
+                    <li><a href="{{ url_for('logout') }}">Logout</a></li>
+                    <li><a href="#" onclick="openCart()">ลิสสินค้า</a></li>
+                {% else %}
+                    <li><a href="{{ url_for('login') }}">Login</a></li>
+                {% endif %}
+
+                <li class="cart-summary">
+                    สินค้า: <span id="cart-count">{{ cart_count }}</span> ชิ้น 
+                    รวม: <span id="cart-total">{{ total_price }}</span> บาท
+                </li>
             </ul>
         </nav>
     </header>
 
+    <!-- Flash messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Use JSON-serialized messages to avoid mixing Jinja control tags inside JS logic
+            const flashMessages = {{ messages|tojson|safe }};
+            if (Array.isArray(flashMessages) && flashMessages.length) {
+                flashMessages.forEach(([category, message]) => {
+                    // call the existing showToast function for each message
+                    showToast(message);
+                });
+            }
+        });
+        </script>
+    {% endif %}
+    {% endwith %}
+
     <div class="menu-header">
-        <a href="{{ url_for('add_item') }}" class="add-btn">เพิ่มสินค้า</a>
         <h2>เมนูอาหาร</h2>
+        {% if session.get('user') %}
+            <a href="{{ url_for('add_item') }}" class="add-btn">เพิ่มสินค้า</a>
+        {% endif %}
     </div>
 
     <div class="menu-grid">
@@ -36,6 +66,8 @@
             <h3>{{ item.name }}</h3>
             <p class="price">{{ item.price }} บาท</p>
 
+            {% if session.get('user') %}
+            <!-- เฉพาะผู้ใช้ล็อกอิน -->
             <div class="card-actions">
                 <a href="{{ url_for('edit_item', item_id=item.id) }}" title="แก้ไข"><i class="fa fa-pencil-alt"></i></a>
                 <a href="{{ url_for('delete_item', item_id=item.id) }}" title="ลบ"><i class="fa fa-trash"></i></a>
@@ -46,14 +78,14 @@
                 <span class="quantity">0</span>
                 <button class="increase">+</button>
             </div>
-
-            <button class="add-to-cart">เพิ่มลงตะกร้า</button>
+            <button class="add-to-cart">เพิ่มในลิส</button>
+            {% endif %}
         </div>
         {% endfor %}
     </div>
 
     <!-- Toast Notification -->
-    <div id="toast" class="toast">เพิ่มสินค้าแล้ว</div>
+    <div id="toast" class="toast">ข้อความ</div>
 
     <!-- Cart Modal -->
     <div id="cart-modal" class="cart-modal">
@@ -69,51 +101,43 @@
     document.addEventListener('DOMContentLoaded', () => {
         const carts = {};
 
+        window.showToast = function(message){
+            const toast = document.getElementById("toast");
+            if(!toast) return;
+            toast.innerText = message;
+            toast.classList.add("show");
+            setTimeout(() => toast.classList.remove("show"), 1500);
+        }
+
         document.querySelectorAll('.menu-card').forEach(card => {
             const priceText = card.querySelector('.price').innerText;
             const price = parseFloat(priceText.replace(/[^0-9.]/g, ''));
             let qtyElem = card.querySelector('.quantity');
             let qty = 0;
 
-            card.querySelector('.increase').addEventListener('click', () => {
-                qty++;
-                qtyElem.innerText = qty;
-            });
+            const incBtn = card.querySelector('.increase');
+            const decBtn = card.querySelector('.decrease');
+            const addBtn = card.querySelector('.add-to-cart');
 
-            card.querySelector('.decrease').addEventListener('click', () => {
-                if(qty > 0) qty--;
-                qtyElem.innerText = qty;
-            });
-
-            card.querySelector('.add-to-cart').addEventListener('click', () => {
+            if(incBtn) incBtn.addEventListener('click', () => { qty++; qtyElem.innerText = qty; });
+            if(decBtn) decBtn.addEventListener('click', () => { if(qty>0) qty--; qtyElem.innerText = qty; });
+            if(addBtn) addBtn.addEventListener('click', () => {
                 const name = card.querySelector('h3').innerText;
                 if(qty > 0){
-                    // ถ้ามีสินค้าอยู่แล้วให้บวกเพิ่ม
                     if(carts[name]){
                         carts[name].qty += qty;
                     } else {
                         carts[name] = { qty: qty, price: price };
                     }
-
                     showToast("เพิ่มสินค้าแล้ว");
-
-                    qty = 0;
-                    qtyElem.innerText = qty;
-
+                    qty = 0; qtyElem.innerText = qty;
                     updateCart();
                 } else {
-                    delete carts[name];
+                    showToast("โปรดเลือกจำนวนสินค้าก่อนเพิ่มลงตะกร้า");
                     updateCart();
                 }
             });
         });
-
-        function showToast(message){
-            const toast = document.getElementById("toast");
-            toast.innerText = message;
-            toast.classList.add("show");
-            setTimeout(() => toast.classList.remove("show"), 1500);
-        }
 
         function updateCart(){
             let totalQty = 0;
@@ -127,69 +151,63 @@
         }
 
         window.openCart = function() {
-        const modal = document.getElementById("cart-modal");
-        const itemsList = document.getElementById("cart-items");
-        const totalElem = document.getElementById("cart-grand-total");
-        itemsList.innerHTML = "";
+            const modal = document.getElementById("cart-modal");
+            const itemsList = document.getElementById("cart-items");
+            const totalElem = document.getElementById("cart-grand-total");
+            itemsList.innerHTML = "";
 
-        let total = 0; // ประกาศ total
+            let total = 0;
+            for(const name in carts){
+                const item = carts[name];
+                const itemTotal = item.qty * item.price;
+                total += itemTotal;
 
-        for(const name in carts){
-            const item = carts[name];
-            const itemTotal = item.qty * item.price;
-            total += itemTotal;
+                itemsList.innerHTML += `
+                <li>
+                    <span class="item-name">${name}</span>
+                    <div class="item-qty">
+                        <button class="qty-decrease" data-name="${name}">-</button>
+                        <span class="qty-number">${item.qty}</span>
+                        <button class="qty-increase" data-name="${name}">+</button>
+                    </div>
+                    <span class="item-price">${itemTotal.toFixed(2)} บาท</span>
+                    <button class="remove-item" data-name="${name}">&times;</button>
+                </li>`;
+            }
+            totalElem.innerHTML = `รวม: ${total.toFixed(2)} บาท`;
 
-            itemsList.innerHTML += `
-            <li>
-                <span class="item-name">${name}</span>
-                <div class="item-qty">
-                    <button class="qty-decrease" data-name="${name}">-</button>
-                    <span class="qty-number">${item.qty}</span>
-                    <button class="qty-increase" data-name="${name}">+</button>
-                </div>
-                <span class="item-price">${itemTotal.toFixed(2)} บาท</span>
-                <button class="remove-item" data-name="${name}">&times;</button>
-            </li>`;
-        }
-
-        const vat = total * 0.07;
-        const grandTotal = total + vat;
-        totalElem.innerHTML = `รวม: ${total.toFixed(2)} บาท + VAT 7% = ${grandTotal.toFixed(2)} บาท`;
-
-        // ปุ่มลบและ + / -
-        itemsList.querySelectorAll('.remove-item').forEach(btn => {
-            btn.addEventListener('click', () => {
-                const name = btn.getAttribute('data-name');
-                delete carts[name];
-                updateCart();
-                openCart();
-            });
-        });
-
-        itemsList.querySelectorAll('.qty-increase').forEach(btn=>{
-            btn.addEventListener('click', ()=>{
-                const name = btn.getAttribute('data-name');
-                carts[name].qty++;
-                updateCart();
-                openCart();
-            });
-        });
-        itemsList.querySelectorAll('.qty-decrease').forEach(btn=>{
-            btn.addEventListener('click', ()=>{
-                const name = btn.getAttribute('data-name');
-                if(carts[name].qty>1){
-                    carts[name].qty--;
-                } else {
+            // ปุ่มลบและ + / -
+            itemsList.querySelectorAll('.remove-item').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const name = btn.getAttribute('data-name');
                     delete carts[name];
-                }
-                updateCart();
-                openCart();
+                    updateCart();
+                    openCart();
+                });
             });
-        });
+            itemsList.querySelectorAll('.qty-increase').forEach(btn=>{
+                btn.addEventListener('click', ()=>{
+                    const name = btn.getAttribute('data-name');
+                    carts[name].qty++;
+                    updateCart();
+                    openCart();
+                });
+            });
+            itemsList.querySelectorAll('.qty-decrease').forEach(btn=>{
+                btn.addEventListener('click', ()=>{
+                    const name = btn.getAttribute('data-name');
+                    if(carts[name].qty>1){
+                        carts[name].qty--;
+                    } else {
+                        delete carts[name];
+                    }
+                    updateCart();
+                    openCart();
+                });
+            });
 
-        modal.style.display = "block";
-    };
-
+            modal.style.display = "block";
+        };
 
         window.closeCart = function() {
             document.getElementById("cart-modal").style.display = "none";

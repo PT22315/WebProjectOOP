@@ -1,5 +1,5 @@
 # app.py
-from flask import Flask, render_template, request, redirect, url_for, flash
+from flask import Flask, render_template, request, redirect, url_for, flash ,session
 from models import db, ProductDB
 from flask_livereload import LiveReload
 
@@ -46,27 +46,45 @@ with app.app_context():
 @app.route('/')
 def index():
     menu = ProductDB.query.all()
-    return render_template('index.html', menu=menu)
+    cart_count = session.get("cart_count", 0)
+    total_price = session.get("total_price", 0.00)
+    return render_template('index.html', menu=menu, cart_count=cart_count, total_price=total_price)
 
-@app.route('/menu')
+@app.route('/menu_page')
 def menu_page():
     menu = ProductDB.query.all()
-    return render_template('index.html', menu=menu)
+    cart_count = session.get("cart_count", 0)
+    total_price = session.get("total_price", 0.00)
+    return render_template('index.html', menu=menu, cart_count=cart_count, total_price=total_price)
 
-@app.route('/login', methods=['GET', 'POST'])
+# =========================
+# Login Route
+# =========================
+@app.route("/login", methods=["GET", "POST"])
 def login():
-    if request.method == 'POST':
-        username = request.form.get('username')
-        password = request.form.get('password')
+    if request.method == "POST":
+        username = request.form["username"]
+        password = request.form["password"]
 
-        # Demo login: username=admin, password=1234
         if username == "admin" and password == "1234":
-            flash("Login สำเร็จ!", "success")
-            return redirect(url_for('index'))
+            session["user"] = username  # เก็บ user ใน session
+            flash("เข้าสู่ระบบสำเร็จ!", "success")
+            return redirect(url_for("index"))
         else:
-            flash("Username หรือ Password ไม่ถูกต้อง", "error")
+            flash("ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง", "error")
+            return redirect(url_for("login"))
+        
+    # ส่งค่า cart summary ไปด้วย (กัน error header)
+    cart_count = session.get("cart_count", 0)
+    total_price = session.get("total_price", 0.00)
+    return render_template("login.html", cart_count=cart_count, total_price=total_price)
 
-    return render_template('login.html')
+@app.route("/logout")
+def logout():
+    session.pop("user", None)  # ลบ user ออกจาก session
+    flash("ออกจากระบบเรียบร้อยแล้ว", "success")
+    return redirect(url_for("index"))
+
 
 @app.route('/edit/<int:item_id>', methods=['GET', 'POST'])
 def edit_item(item_id):
