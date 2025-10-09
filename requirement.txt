@@ -1,4 +1,0 @@
-Flask==2.3.5
-Flask_SQLAlchemy==3.0.5
-flask-livereload==0.2.3
-Werkzeug==3.1.3
