@@ -216,13 +216,13 @@
 
         // ปุ่ม Checkout
         const checkoutForm = document.getElementById("checkout-form");
-        document.getElementById("cart-data").value = JSON.stringify(carts);
+        
         if(total > 0){
             checkoutForm.style.display = "block";
         } else {
             checkoutForm.style.display = "none";
         }
-
+        document.getElementById("cart-data").value = JSON.stringify(carts);
         // ปุ่ม + / - และ remove
         itemsList.querySelectorAll('.remove-item').forEach(btn => {
             btn.addEventListener('click', () => {

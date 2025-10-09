@@ -169,38 +169,46 @@ def checkout():
         flash("โปรดเลือกโต๊ะก่อนสั่งอาหาร", "error")
         return redirect(url_for("index"))
 
-    cart_json = request.form.get("cart_data")
-    if not cart_json:
-        flash("ตะกร้าว่าง", "error")
-        return redirect(url_for("index"))
+    # ใช้ cart จาก session JS (POST มาจาก hidden input) หรือ session['cart']
+    import json
+    cart_data = request.form.get("cart_data")
+    if cart_data:
+        cart = json.loads(cart_data)
+    else:
+        cart = session.get('cart', {})
 
-    cart = json.loads(cart_json)
     if not cart:
         flash("ตะกร้าว่าง", "error")
         return redirect(url_for("index"))
 
-    # ตรวจสอบว่ามี Active Order อยู่แล้วหรือยัง
+    # เช็คว่ามี order active ของโต๊ะนี้หรือยัง
     order = OrderDB.query.filter_by(table_number=table_number, status="active").first()
     if not order:
         order = OrderDB(table_number=table_number, status="active")
         db.session.add(order)
         db.session.commit()
 
-    # เพิ่มรายการสินค้าเข้า OrderItemDB
     total_price = order.total_price or 0
+
     for name, info in cart.items():
+        qty = info['qty']
         product = ProductDB.query.filter_by(name=name).first()
         if product:
-            qty = info['qty']
+            # เช็คว่า item นี้อยู่ใน order แล้วหรือยัง
+            item = OrderItemDB.query.filter_by(order_id=order.id, product_id=product.id).first()
+            if item:
+                item.quantity += qty
+            else:
+                item = OrderItemDB(order_id=order.id, product_id=product.id, quantity=qty)
+                db.session.add(item)
             total_price += product.price * qty
-            db.session.add(OrderItemDB(order_id=order.id, product_id=product.id, quantity=qty))
+
     order.total_price = total_price
     db.session.commit()
 
-    session['cart'] = {}  # เคลียร์ cart
+    session['cart'] = {}  # เคลียร์ session cart
     flash("สั่งอาหารเรียบร้อยแล้ว", "success")
     return redirect(url_for('active_orders'))
-
 
 # -----------------------------
 # Active Orders Page
@@ -242,6 +250,5 @@ def clear_session():
 # Run server
 # -----------------------------
 if __name__ == '__main__':
-    with app.app_context():
-        db.create_all()
-    app.run(debug=True, use_reloader=True)
+    port = int(os.environ.get("PORT", 5000))  # อ่าน port จาก environment
+    app.run(host="0.0.0.0", port=port, debug=True)
