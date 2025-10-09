@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <title>เลือกโต๊ะ - ร้านอาหาร OOP</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <style>
+        .table-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .table-card {
+            border: 1px solid #ccc;
+            padding: 20px;
+            width: 120px;
+            text-align: center;
+            border-radius: 8px;
+            cursor: pointer;
+            background-color: #f7f7f7;
+            transition: 0.2s;
+        }
+        .table-card:hover {
+            background-color: #d4edda;
+            border-color: #28a745;
+        }
+        .add-table-btn {
+            margin-top: 20px;
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+        .add-table-btn:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>เลือกโต๊ะ</h1>
+        <nav>
+            <ul>
+                <li><a href="{{ url_for('index') }}">Home</a></li>
+                <li><a href="{{ url_for('menu_page') }}">Menu</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <h2>เลือกโต๊ะเพื่อเริ่มออเดอร์</h2>
+
+    <div class="table-grid" id="table-grid">
+        {% for i in range(1,7) %}
+        <div class="table-card" onclick="selectTable({{ i }})">
+            โต๊ะ {{ i }}
+        </div>
+        {% endfor %}
+    </div>
+
+    <button class="add-table-btn" onclick="addTable()">+ เพิ่มโต๊ะ</button>
+
+    <script>
+        let tableCount = 6;  // จำนวนโต๊ะเริ่มต้น
+
+        function selectTable(number) {
+            window.location.href = `/set_table/${number}`;
+        }
+
+        function addTable() {
+            tableCount++;
+            const grid = document.getElementById('table-grid');
+            const div = document.createElement('div');
+            div.className = 'table-card';
+            div.innerText = 'โต๊ะ ' + tableCount;
+            div.onclick = () => selectTable(tableCount);
+            grid.appendChild(div);
+        }
+    </script>
+</body>
+</html>

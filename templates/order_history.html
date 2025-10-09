@@ -1,0 +1,71 @@
+<!-- templates/order_history.html -->
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <title>Order History</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <style>
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            padding: 10px;
+            border: 1px solid #ccc;
+            text-align: center;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        .status-paid {
+            color: green;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Order History</h1>
+        <nav>
+            <ul>
+                <li><a href="{{ url_for('index') }}">Home</a></li>
+                <li><a href="{{ url_for('active_orders') }}">Active Orders</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    {% if orders %}
+    <table>
+        <thead>
+            <tr>
+                <th>โต๊ะ</th>
+                <th>รายการสินค้า</th>
+                <th>ราคารวม</th>
+                <th>สถานะ</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for order in orders %}
+            <tr>
+                <td>{{ order.table_number }}</td>
+                <td>
+                    <ul>
+                    {% for item in order.items %}
+                        <li>{{ item.product.name }} x{{ item.quantity }} = {{ item.subtotal() }} บาท</li>
+                    {% endfor %}
+                    </ul>
+                </td>
+                <td>{{ order.total_price }} บาท</td>
+                <td class="status-paid">{{ order.status }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+        <p>ยังไม่มีออเดอร์ที่ชำระเงินแล้ว</p>
+    {% endif %}
+</body>
+</html>

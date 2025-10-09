@@ -89,7 +89,7 @@ header nav ul li a:hover {
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    min-height: 350px; /* เพิ่มความสูงขั้นต่ำ */
+    min-height: 340px; /* เพิ่มความสูงขั้นต่ำ */
 }
 
 
@@ -137,6 +137,7 @@ header nav ul li a:hover {
     align-items: center;
     gap: 10px;
     margin-top: 15px;
+    margin-bottom: 10px;
 }
 
 .quantity-controls button {
@@ -150,7 +151,7 @@ header nav ul li a:hover {
 /* ========================= */
 /*      Buttons Gradient     */
 /* ========================= */
-.add-btn, .add-to-cart {
+.add-btn {
     display: inline-block;
     padding: 8px 16px;
     border-radius: 5px;
@@ -161,7 +162,21 @@ header nav ul li a:hover {
     border: none;
     background: linear-gradient(90deg,#5d4c91, #554272, #2f1749);
     transition: transform 0.2s ease, box-shadow 0.2s ease;
-    margin-top: 15px; 
+    margin-left: auto;
+    align-self: flex-start;
+}
+
+.add-to-cart {
+    display: inline-block;
+    padding: 8px 16px;
+    border-radius: 5px;
+    text-decoration: none;
+    font-weight: 600;
+    color: #fff;
+    cursor: pointer;
+    border: none;
+    background: linear-gradient(90deg,#5d4c91, #554272, #2f1749);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .add-btn:hover, .add-to-cart:hover {
@@ -418,4 +433,61 @@ li.error {
 @keyframes fadeIn {
     from { opacity: 0; transform: translateY(-10px); }
     to { opacity: 1; transform: translateY(0); }
+}
+
+/* กรอบล้อมรอบโต๊ะ + สีตัวเลข */
+.table-info {
+    border: 2px solid #000000;  /* สีกรอบ */
+    padding: 5px 10px;
+    border-radius: 6px;
+    display: inline-block;
+    margin-left: 10px;
+    background-color: #f0fff0;  /* พื้นหลังอ่อน */
+}
+
+.table-label {
+    color: black;  /* คำว่า "โต๊ะ" */
+}
+
+.table-number {
+    color: red;    /* เลขโต๊ะ */
+    font-weight: bold;
+}
+
+.select-table-btn {
+    margin-left: 10px;
+    text-decoration: none;
+    color: #007bff;
+}
+.select-table-btn:hover {
+    text-decoration: underline;
+}
+.checkout-btn {
+    background-color: #007bff;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: background-color 0.3s, transform 0.2s;
+}
+.checkout-btn:hover {
+    background-color: #0056b3;
+    transform: scale(1.05);
+}
+
+.pay-btn {
+    background-color: #28a745; /* สีเขียว */
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: background-color 0.3s, transform 0.2s;
+}
+.pay-btn:hover {
+    background-color: #218838;
+    transform: scale(1.05);
 }

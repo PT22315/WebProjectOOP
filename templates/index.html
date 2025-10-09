@@ -6,29 +6,42 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 </head>
-<body>
-    <header>
-        <h1>ร้านอาหาร OOP</h1>
-        <nav>
-            <ul>
-                <li><a href="{{ url_for('index') }}">Home</a></li>
-                <li><a href="{{ url_for('menu_page') }}">Menu</a></li>
+<body data-table="{{ session.get('table_number') }}">
 
-                {% if session.get('user') %}
-                    <li>สวัสดี, {{ session['user'] }}</li>
-                    <li><a href="{{ url_for('logout') }}">Logout</a></li>
+    <header>
+    <h1>ร้านอาหาร OOP</h1>
+    <nav>
+        <ul>
+            <li><a href="{{ url_for('index') }}">Home</a></li>
+
+            {% if session.get('user') %}
+                <li>สวัสดี, {{ session['user'] }}</li>
+                <li><a href="{{ url_for('logout') }}">Logout</a></li>
+                <li><a href="{{ url_for('active_orders') }}">Active Orders</a></li>
+                <li><a href="{{ url_for('order_history') }}">Order History</a></li>
+
+                {% if session.get('table_number') %}
                     <li><a href="#" onclick="openCart()">ลิสสินค้า</a></li>
+                    <li class="cart-summary">
+                        สินค้า: <span id="cart-count">{{ cart_count }}</span> ชิ้น 
+                        รวม: <span id="cart-total">{{ total_price }}</span> บาท
+                    </li>
+                    <li class="table-info">
+                        <span class="table-label">โต๊ะ</span>
+                        <span class="table-number">{{ session['table_number'] }}</span>
+                        <a href="{{ url_for('select_table') }}" class="select-table-btn">เลือกโต๊ะ</a>
+                    </li>
                 {% else %}
-                    <li><a href="{{ url_for('login') }}">Login</a></li>
+                    <li><a href="{{ url_for('select_table') }}">เลือกโต๊ะ</a></li>
                 {% endif %}
 
-                <li class="cart-summary">
-                    สินค้า: <span id="cart-count">{{ cart_count }}</span> ชิ้น 
-                    รวม: <span id="cart-total">{{ total_price }}</span> บาท
-                </li>
-            </ul>
-        </nav>
-    </header>
+            {% else %}
+                <li><a href="{{ url_for('login') }}">Login</a></li>
+            {% endif %}
+        </ul>
+    </nav>
+</header>
+
 
     <!-- Flash messages -->
     {% with messages = get_flashed_messages(with_categories=true) %}
@@ -49,12 +62,14 @@
     {% endwith %}
 
     <div class="menu-header">
-        <h2>เมนูอาหาร</h2>
+        <h2>เมนูอาหาร<br>
+            กรุณาเลือกโต๊ะก่อนรับออเดอร์<br>
+            รับออเดอร์เสร็จแล้วให้กดที่ "ลิสสินค้า" ด้านบนขวา เพื่อดูรายการและยืนยันออเดอร์
+        </h2>
         {% if session.get('user') %}
             <a href="{{ url_for('add_item') }}" class="add-btn">เพิ่มสินค้า</a>
         {% endif %}
     </div>
-
     <div class="menu-grid">
         {% for item in menu %}
         <div class="menu-card">
@@ -72,14 +87,18 @@
                 <a href="{{ url_for('edit_item', item_id=item.id) }}" title="แก้ไข"><i class="fa fa-pencil-alt"></i></a>
                 <a href="{{ url_for('delete_item', item_id=item.id) }}" title="ลบ"><i class="fa fa-trash"></i></a>
             </div>
+            {% endif %}
 
+            {% if session.get('user') and session.get('table_number') %}
             <div class="quantity-controls">
                 <button class="decrease">-</button>
                 <span class="quantity">0</span>
                 <button class="increase">+</button>
             </div>
+
             <button class="add-to-cart">เพิ่มในลิส</button>
             {% endif %}
+
         </div>
         {% endfor %}
     </div>
@@ -91,15 +110,27 @@
     <div id="cart-modal" class="cart-modal">
         <div class="cart-content">
             <span class="close" onclick="closeCart()">&times;</span>
-            <h3>ตะกร้าสินค้า</h3>
+            <h3>ลิสสินค้า</h3>
             <ul id="cart-items"></ul>
             <p id="cart-grand-total"></p>
+
+            <!-- ปุ่ม Checkout -->
+            <form id="checkout-form" action="{{ url_for('checkout') }}" method="post">
+                <input type="hidden" name="cart_data" id="cart-data">
+                <button type="submit" class="checkout-btn">ยืนยันออเดอร์ / Checkout</button>
+            </form>
         </div>
     </div>
 
     <script>
     document.addEventListener('DOMContentLoaded', () => {
-        const carts = {};
+        const allTables = {}; // เก็บตะกร้าของแต่ละโต๊ะ
+        const tableNumber = document.body.dataset.table;
+        if (!allTables[tableNumber]) {
+            allTables[tableNumber] = {};
+        }
+        const carts = allTables[tableNumber]; // carts ของโต๊ะนี้
+
 
         window.showToast = function(message){
             const toast = document.getElementById("toast");
@@ -118,10 +149,16 @@
             const incBtn = card.querySelector('.increase');
             const decBtn = card.querySelector('.decrease');
             const addBtn = card.querySelector('.add-to-cart');
+            
 
             if(incBtn) incBtn.addEventListener('click', () => { qty++; qtyElem.innerText = qty; });
             if(decBtn) decBtn.addEventListener('click', () => { if(qty>0) qty--; qtyElem.innerText = qty; });
             if(addBtn) addBtn.addEventListener('click', () => {
+                if (!document.body.dataset.table) {
+                    showToast("โปรดเลือกโต๊ะก่อนเพิ่มสินค้า");
+                    return;
+                }
+
                 const name = card.querySelector('h3').innerText;
                 if(qty > 0){
                     if(carts[name]){
@@ -151,63 +188,74 @@
         }
 
         window.openCart = function() {
-            const modal = document.getElementById("cart-modal");
-            const itemsList = document.getElementById("cart-items");
-            const totalElem = document.getElementById("cart-grand-total");
-            itemsList.innerHTML = "";
+        const modal = document.getElementById("cart-modal");
+        const itemsList = document.getElementById("cart-items");
+        const totalElem = document.getElementById("cart-grand-total");
+        itemsList.innerHTML = "";
 
-            let total = 0;
-            for(const name in carts){
-                const item = carts[name];
-                const itemTotal = item.qty * item.price;
-                total += itemTotal;
+        let total = 0;
+        for(const name in carts){
+            const item = carts[name];
+            const itemTotal = item.qty * item.price;
+            total += itemTotal;
 
-                itemsList.innerHTML += `
-                <li>
-                    <span class="item-name">${name}</span>
-                    <div class="item-qty">
-                        <button class="qty-decrease" data-name="${name}">-</button>
-                        <span class="qty-number">${item.qty}</span>
-                        <button class="qty-increase" data-name="${name}">+</button>
-                    </div>
-                    <span class="item-price">${itemTotal.toFixed(2)} บาท</span>
-                    <button class="remove-item" data-name="${name}">&times;</button>
-                </li>`;
-            }
-            totalElem.innerHTML = `รวม: ${total.toFixed(2)} บาท`;
+            itemsList.innerHTML += `
+            <li>
+                <span class="item-name">${name}</span>
+                <div class="item-qty">
+                    <button class="qty-decrease" data-name="${name}">-</button>
+                    <span class="qty-number">${item.qty}</span>
+                    <button class="qty-increase" data-name="${name}">+</button>
+                </div>
+                <span class="item-price">${itemTotal.toFixed(2)} บาท</span>
+                <button class="remove-item" data-name="${name}">&times;</button>
+            </li>`;
+        }
 
-            // ปุ่มลบและ + / -
-            itemsList.querySelectorAll('.remove-item').forEach(btn => {
-                btn.addEventListener('click', () => {
-                    const name = btn.getAttribute('data-name');
+        totalElem.innerHTML = `รวม: ${total.toFixed(2)} บาท`;
+
+        // ปุ่ม Checkout
+        const checkoutForm = document.getElementById("checkout-form");
+        document.getElementById("cart-data").value = JSON.stringify(carts);
+        if(total > 0){
+            checkoutForm.style.display = "block";
+        } else {
+            checkoutForm.style.display = "none";
+        }
+
+        // ปุ่ม + / - และ remove
+        itemsList.querySelectorAll('.remove-item').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const name = btn.getAttribute('data-name');
+                delete carts[name];
+                updateCart();
+                openCart();
+            });
+        });
+        itemsList.querySelectorAll('.qty-increase').forEach(btn=>{
+            btn.addEventListener('click', ()=>{
+                const name = btn.getAttribute('data-name');
+                carts[name].qty++;
+                updateCart();
+                openCart();
+            });
+        });
+        itemsList.querySelectorAll('.qty-decrease').forEach(btn=>{
+            btn.addEventListener('click', ()=>{
+                const name = btn.getAttribute('data-name');
+                if(carts[name].qty > 1){
+                    carts[name].qty--;
+                } else {
                     delete carts[name];
-                    updateCart();
-                    openCart();
-                });
+                }
+                updateCart();
+                openCart();
             });
-            itemsList.querySelectorAll('.qty-increase').forEach(btn=>{
-                btn.addEventListener('click', ()=>{
-                    const name = btn.getAttribute('data-name');
-                    carts[name].qty++;
-                    updateCart();
-                    openCart();
-                });
-            });
-            itemsList.querySelectorAll('.qty-decrease').forEach(btn=>{
-                btn.addEventListener('click', ()=>{
-                    const name = btn.getAttribute('data-name');
-                    if(carts[name].qty>1){
-                        carts[name].qty--;
-                    } else {
-                        delete carts[name];
-                    }
-                    updateCart();
-                    openCart();
-                });
-            });
+        });
 
-            modal.style.display = "block";
-        };
+        modal.style.display = "block";
+    };
+
 
         window.closeCart = function() {
             document.getElementById("cart-modal").style.display = "none";

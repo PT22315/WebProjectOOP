@@ -56,7 +56,7 @@
     </header>
 
     <div class="form-container">
-        <form method="POST">
+        <form method="POST" enctype="multipart/form-data">
             <label>ชื่อสินค้า</label>
             <input type="text" name="name" required>
 
@@ -66,8 +66,8 @@
             <label>ประเภท</label>
             <input type="text" name="category">
 
-            <label>URL รูปภาพ</label>
-            <input type="text" name="image_url" placeholder="ใส่ URL รูปภาพ">
+            <label>เลือกรูปภาพ</label>
+            <input type="file" name="image_file" accept="image/*">
 
             <button type="submit" class="add-btn">บันทึก</button>
         </form>
