@@ -21,14 +21,18 @@ class ProductDB(db.Model):
 # -----------------------------
 # OOP / Business Logic
 # -----------------------------
+
+from abc import ABC, abstractmethod
+
 class Item(ABC):
     @abstractmethod
     def get_info(self):
         pass
 
 class Product(Item):
+
     def __init__(self, name, price, category):
-        self.__name = name       # Encapsulation
+        self.__name = name                                                      # Encapsulation
         self.__price = price
         self.__category = category
 
@@ -56,17 +60,19 @@ class Menu:
 
 
 # Example of Polymorphism: Beverage subclass
+
 class Beverage(Product):
+    
     def __init__(self, name, price, size="Medium"):
-        super().__init__(name, price, "เครื่องดื่ม")  # Inheritance + Constructor
-        self.__size = size  # Encapsulation
+        super().__init__(name, price, "เครื่องดื่ม")                                         # Inheritance + Constructor
+        self.__size = size                                                               # Encapsulation
 
     # Polymorphism: override get_info
     def get_info(self):
         return f"{self.get_name()} ({self.__size}) - {self.get_price()} บาท"
 
 # -----------------------------
-# Order System Models (ใหม่)
+# Order System Models (ใหม่)  
 # -----------------------------
 class OrderDB(db.Model):
     __tablename__ = 'orders'
